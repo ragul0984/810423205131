@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect } from "react";
+import Log from "../../logging-middleware";
 import {
   Alert,
   Badge,
@@ -16,19 +17,45 @@ import { NotificationFilter } from "../components/NotificationFilter";
 import { useNotifications } from "../hooks/useNotifications";
 
 export function NotificationsPage() {
+  useEffect(() => {
+  Log(
+    "frontend",
+    "info",
+    "page",
+    "Notifications page loaded"
+  );
+}, []);
+
   const [filter, setFilter] = useState();
   const [page, setPage] = useState("1");
+  const [viewed, setViewed] = useState([]);
 
   const { notifications, totalPages, loading, error } = useNotifications();
+  const filteredNotifications =
+  filter && filter !== "All"
+    ? notifications.filter((n) => n.Type === filter)
+    : notifications;
 
   const unreadCount = notifications.length;
 
   const handleFilterChange = (newFilter) => {
     setFilter(newFilter);
+      Log(
+    "frontend",
+    "info",
+    "component",
+    `Filter changed to ${newFilter}`
+  );
   };
 
   const handlePageChange = (_, newPage) => {
     setPage(newPage);
+     Log(
+    "frontend",
+    "info",
+    "page",
+    `Page changed to ${newPage}`
+  );
   };
 
   return (
@@ -59,13 +86,17 @@ export function NotificationsPage() {
       )}
 
       {!loading && !error && notifications.length === 0 && (
-        <Alert severity="info">Something message</Alert>
+        <Alert severity="info">No notifications found</Alert>
       )}
 
       {!loading && !error && notifications.length > 0 && (
         <Stack spacing={1.5}>
-          {notifications.map((n) => (
-            <Alert key={n.ID} severity="info">
+          {filteredNotifications.map((n) => (
+            <Alert
+  key={n.ID}
+  severity={viewed.includes(n.ID) ? "success" : "info"}
+  onClick={() => setViewed([...viewed, n.ID])}
+>
               <strong>{n.Type}</strong> : {n.Message}
             </Alert>
           ))}
