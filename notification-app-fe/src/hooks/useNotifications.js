@@ -1,58 +1,66 @@
 import { useState, useEffect } from "react";
 import { fetchNotifications } from "../api/notifications";
-import Log from "../../logging-middleware";
+import { Log } from "../../../logging-middleware/index.js";
 
 export function useNotifications() {
   const [notifications, setNotifications] = useState([]);
   const [total, setTotal] = useState(0);
 
- const load = async () => {
-  try {
+  useEffect(() => {
+    const load = async () => {
+      try {
+        await Log(
+          "frontend",
+          "info",
+          "api",
+          "Fetching notifications from server"
+        );
 
-    Log("frontend", "info", "api", "Fetching notifications");
+        const data = await fetchNotifications();
 
-    const data = await fetchNotifications();
+        await Log(
+          "frontend",
+          "info",
+          "api",
+          "Notifications fetched successfully"
+        );
 
-    Log("frontend", "info", "api", "Notifications fetched successfully");
+        const weight = {
+          Placement: 3,
+          Result: 2,
+          Event: 1,
+        };
 
-    const weight = {
-      Placement: 3,
-      Result: 2,
-      Event: 1
+        const topNotifications = (data.notifications ?? [])
+          .sort((a, b) => {
+            if (weight[a.Type] !== weight[b.Type]) {
+              return weight[b.Type] - weight[a.Type];
+            }
+
+            return new Date(b.Timestamp) - new Date(a.Timestamp);
+          })
+          .slice(0, 10);
+
+        setNotifications(topNotifications);
+        setTotal(topNotifications.length);
+      } catch (error) {
+        await Log(
+          "frontend",
+          "error",
+          "api",
+          "Failed to fetch notifications from server"
+        );
+      }
     };
 
-    const topNotifications = (data.notifications ?? [])
-      .sort((a, b) => {
-        if (weight[a.Type] !== weight[b.Type]) {
-          return weight[b.Type] - weight[a.Type];
-        }
-
-        return new Date(b.Timestamp) - new Date(a.Timestamp);
-      })
-      .slice(0, 10);
-
-    setNotifications(topNotifications);
-    setTotal(topNotifications.length);
-
-  } catch (error) {
-
-    Log(
-      "frontend",
-      "error",
-      "api",
-      "Failed to fetch notifications"
-    );
-
-  }
-};
-
-  const totalPages = 0;
+    load();
+  }, []);
 
   return {
-  notifications,
-  total,
-  totalPages,
-  loading: false,
-  error: false
+    notifications,
+    total,
+    totalPages: 0,
+    loading: false,
+    error: false,
   };
 }

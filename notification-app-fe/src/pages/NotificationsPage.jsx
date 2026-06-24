@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import Log from "../../logging-middleware";
+import { useState, useEffect } from "react";
+import { Log } from "../../../logging-middleware/index.js";
 import {
   Alert,
   Badge,
